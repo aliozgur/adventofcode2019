@@ -29,35 +29,6 @@ type Opcode struct{
 	ParamMode3 int
 }
 
-func parseInput(problem string) (result []int){
-	var values = strings.Split(problem,",")
-	for _,value := range values {
-		if value == "" {
-			continue
-		}
-		v,e := strconv.Atoi(value)
-		if e == nil {
-			result = append(result, v)
-		} else{
-			log.Println("Can not convert value ",value)
-		}
-	}
-	return
-}
-
-func rebuildProgram(opcodes []int) (program string){
-
-	program = ""
-	for i,code := range opcodes{
-		if i == len(opcodes)-1{
-			program+=strconv.Itoa(code)
-		} else{
-			program+=strconv.Itoa(code) + ","
-		}
-	}
-	return
-}
-
 func Run(program string, inputs []int, cursor int)(output int, newProg string, pausedOn int, halted bool){
 
 	intCodes := parseInput(program)
@@ -162,45 +133,17 @@ func Run(program string, inputs []int, cursor int)(output int, newProg string, p
 	return
 }
 
-func addOrMultiply(op Opcode, v1, v2 int) (result int){
-	switch op.Code {
-	case ADD:
-		result = v1 + v2
-	case MULTIPLY:
-		result = v1*v2
-	}
-	return
-}
-
-func shouldJump(op Opcode, v1 int) (result bool){
-	result = false
-
-	switch op.Code {
-	case JUMPTRUE:
-		if v1 != 0{
-			result = true
+func parseInput(problem string) (result []int){
+	var values = strings.Split(problem,",")
+	for _,value := range values {
+		if value == "" {
+			continue
 		}
-	case JUMPFALSE:
-		if v1 == 0{
-			result = true
-		}
-	}
-	return
-}
-
-func compare(op Opcode, v1,v2 int) (value int){
-	switch op.Code {
-	case LESSTHAN:
-		if v1 < v2{
-			value = 1
+		v,e := strconv.Atoi(value)
+		if e == nil {
+			result = append(result, v)
 		} else{
-			value = 0
-		}
-	case EQUALS:
-		if v1 == v2{
-			value = 1
-		} else{
-			value = 0
+			log.Println("Can not convert value ",value)
 		}
 	}
 	return
@@ -277,4 +220,62 @@ func extractDigit(value int, digit int) int{
 	pow10 := int(math.Pow10(digit-1))
 	return (value / (pow10)) % 10
 }
+
+func rebuildProgram(opcodes []int) (program string){
+
+	program = ""
+	for i,code := range opcodes{
+		if i == len(opcodes)-1{
+			program+=strconv.Itoa(code)
+		} else{
+			program+=strconv.Itoa(code) + ","
+		}
+	}
+	return
+}
+
+func addOrMultiply(op Opcode, v1, v2 int) (result int){
+	switch op.Code {
+	case ADD:
+		result = v1 + v2
+	case MULTIPLY:
+		result = v1*v2
+	}
+	return
+}
+
+func shouldJump(op Opcode, v1 int) (result bool){
+	result = false
+
+	switch op.Code {
+	case JUMPTRUE:
+		if v1 != 0{
+			result = true
+		}
+	case JUMPFALSE:
+		if v1 == 0{
+			result = true
+		}
+	}
+	return
+}
+
+func compare(op Opcode, v1,v2 int) (value int){
+	switch op.Code {
+	case LESSTHAN:
+		if v1 < v2{
+			value = 1
+		} else{
+			value = 0
+		}
+	case EQUALS:
+		if v1 == v2{
+			value = 1
+		} else{
+			value = 0
+		}
+	}
+	return
+}
+
 

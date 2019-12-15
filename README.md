@@ -10,3 +10,4 @@ Visit [adventofcode.com](https://adventofcode.com/2019) to view the calendar of 
 * [Day 4](solutions/solution04/04.go)
 * [Day 5](solutions/solution05/05.go)
 * [Day 6](solutions/solution06/06.go)
+* [Day 7](solutions/solution07/07.go) and [Intcode VM](intcodevm/intcodevm.go)
