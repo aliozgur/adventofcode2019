@@ -293,7 +293,6 @@ func visitCode(ri *codeMap, color int){
 	if !PRINT{
 		return
 	}
-
 	tm.MoveCursor(ri.start,ri.line)
 	tm.Print(tm.Color(ri.value,color))
 	tm.Flush()
