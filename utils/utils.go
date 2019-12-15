@@ -2,10 +2,19 @@ package utils
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
 )
+
+var DEBUG bool = false
+func Println(a ...interface{}) (n int, err error) {
+	if !DEBUG{
+		return
+	}
+	return fmt.Println(a...)
+}
 
 func Max(v1 int, v2 int) int{
 	if v1 > v2{

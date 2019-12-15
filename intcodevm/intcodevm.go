@@ -29,6 +29,21 @@ type Opcode struct{
 	ParamMode3 int
 }
 
+func parseInput(problem string) (result []int){
+	var values = strings.Split(problem,",")
+	for _,value := range values {
+		if value == "" {
+			continue
+		}
+		v,e := strconv.Atoi(value)
+		if e == nil {
+			result = append(result, v)
+		} else{
+			log.Println("Can not convert value ",value)
+		}
+	}
+	return
+}
 
 func rebuildProgram(opcodes []int) (program string){
 
@@ -43,23 +58,22 @@ func rebuildProgram(opcodes []int) (program string){
 	return
 }
 
+func Run(program string, inputs []int, cursor int)(output int, newProg string, pausedOn int, halted bool){
 
-func Run(program string, inputs[] int)(output int, newProg string){
-	cursor := 0
 	intCodes := parseInput(program)
 	output = -1
 	done  := false
 	jump := 0
 
-	for{
+	for !done{
 		jump = 0
-		if done {
-			break
-		}
 		opcode := evalOpcode(intCodes[cursor])
 		if opcode.Code == HALT{
+			halted = true
 			break
 		}
+
+
 		switch opcode.Code {
 		case ADD, MULTIPLY:
 			p1 := intCodes[cursor+1]
@@ -121,12 +135,15 @@ func Run(program string, inputs[] int)(output int, newProg string){
 			intCodes[storeTo] = result
 			jump = opcode.Length
 		case STORE:
-			p1 := intCodes[cursor+1]
-			intCodes[p1] = inputs[0] // pop input
-			if len(inputs) > 1 {
-				inputs = inputs[1:len(inputs)] // dequeue
+			if len(inputs) == 0 {
+				done = true
+			} else{
+				p1 := intCodes[cursor+1]
+				result := inputs[0]
+				intCodes[p1] = result
+				jump = opcode.Length
+				inputs = inputs[1:len(inputs)]
 			}
-			jump = opcode.Length
 		case OUT:
 			p1 := intCodes[cursor+1]
 			if opcode.ParamMode1 == 0 {
@@ -140,23 +157,8 @@ func Run(program string, inputs[] int)(output int, newProg string){
 		cursor = cursor+jump
 	}
 
+	pausedOn = cursor
 	newProg = rebuildProgram(intCodes)
-	return
-}
-
-func parseInput(problem string) (result []int){
-	var values = strings.Split(problem,",")
-	for _,value := range values {
-		if value == "" {
-			continue
-		}
-		v,e := strconv.Atoi(value)
-		if e == nil {
-			result = append(result, v)
-		} else{
-			log.Println("Can not convert value ",value)
-		}
-	}
 	return
 }
 
@@ -206,6 +208,18 @@ func compare(op Opcode, v1,v2 int) (value int){
 
 func evalOpcode(intOpcode int)(result Opcode){
 
+	if intOpcode == HALT{
+		result = Opcode{
+			Code:       intOpcode,
+			ParamCount: 0,
+			Length:     1,
+			ParamMode1: -1,
+			ParamMode2: -1,
+			ParamMode3: -1,
+		}
+		return
+	}
+
 	op :=  extractDigit(intOpcode,1)
 	switch op {
 	case ADD, MULTIPLY:
@@ -250,15 +264,6 @@ func evalOpcode(intOpcode int)(result Opcode){
 			ParamCount: 1,
 			Length:     2,
 			ParamMode1: extractDigit(intOpcode,3),
-			ParamMode2: -1,
-			ParamMode3: -1,
-		}
-	case HALT:
-		result = Opcode{
-			Code:       op,
-			ParamCount: 0,
-			Length:     1,
-			ParamMode1: -1,
 			ParamMode2: -1,
 			ParamMode3: -1,
 		}
