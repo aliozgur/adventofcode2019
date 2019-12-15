@@ -1,6 +1,7 @@
 package intcodevm
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"strconv"
@@ -28,11 +29,25 @@ type Opcode struct{
 	ParamMode3 int
 }
 
-func Run(program string, inputs[] int)(output int, opcodes []Opcode){
-	opcodes = make([]Opcode,0)
+
+func rebuildProgram(opcodes []int) (program string){
+
+	program = ""
+	for i,code := range opcodes{
+		if i == len(opcodes)-1{
+			program+=strconv.Itoa(code)
+		} else{
+			program+=strconv.Itoa(code) + ","
+		}
+	}
+	return
+}
+
+
+func Run(program string, inputs[] int)(output int, newProg string){
+	cursor := 0
 	intCodes := parseInput(program)
 	output = -1
-	cursor := 0
 	done  := false
 	jump := 0
 
@@ -42,8 +57,9 @@ func Run(program string, inputs[] int)(output int, opcodes []Opcode){
 			break
 		}
 		opcode := evalOpcode(intCodes[cursor])
-		opcodes = append(opcodes,opcode)
-
+		if opcode.Code == HALT{
+			break
+		}
 		switch opcode.Code {
 		case ADD, MULTIPLY:
 			p1 := intCodes[cursor+1]
@@ -71,7 +87,6 @@ func Run(program string, inputs[] int)(output int, opcodes []Opcode){
 			if opcode.ParamMode1 == 0 {
 				p1 = intCodes[p1]
 			}
-
 			shouldJump := shouldJump(opcode,p1)
 			if shouldJump {
 				jump = p2
@@ -108,23 +123,24 @@ func Run(program string, inputs[] int)(output int, opcodes []Opcode){
 		case STORE:
 			p1 := intCodes[cursor+1]
 			intCodes[p1] = inputs[0] // pop input
-			inputs = inputs[1:len(inputs)] // dequeue
+			if len(inputs) > 1 {
+				inputs = inputs[1:len(inputs)] // dequeue
+			}
 			jump = opcode.Length
 		case OUT:
-			if intCodes[cursor+2] == HALT {
-				p1 := intCodes[cursor+1]
-
-				if opcode.ParamMode1 == 0{
-					output = intCodes[p1]
-				} else if opcode.ParamMode1 == 1{
-					output = p1
-				}
-				done = true
+			p1 := intCodes[cursor+1]
+			if opcode.ParamMode1 == 0 {
+				output = intCodes[p1]
+			} else if opcode.ParamMode1 == 1 {
+				output = p1
 			}
+			done = true
 			jump = opcode.Length
 		}
 		cursor = cursor+jump
 	}
+
+	newProg = rebuildProgram(intCodes)
 	return
 }
 
@@ -247,7 +263,7 @@ func evalOpcode(intOpcode int)(result Opcode){
 			ParamMode3: -1,
 		}
 	default:
-		panic("Eval: Invalid operation Code!")
+		panic(fmt.Sprintf("Eval: Invalid operation Code. %d",op))
 	}
 	return
 }
