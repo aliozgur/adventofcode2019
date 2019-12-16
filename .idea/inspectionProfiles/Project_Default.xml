@@ -9,6 +9,9 @@
         <function importPath="fmt" name="Println" />
         <function importPath="fmt" name="Print" />
         <function importPath="adventofcode/utils" name="Println" />
+        <function importPath="github.com/buger/goterm" name="Println" />
+        <function importPath="github.com/buger/goterm" name="Print" />
+        <function importPath="fmt" name="Scanln" />
       </functions>
     </inspection_tool>
     <inspection_tool class="SpellCheckingInspection" enabled="true" level="TYPO" enabled_by_default="true">
