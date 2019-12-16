@@ -1,9 +1,9 @@
 package main
 
 import (
-	"adventofcode/solutions/solution07"
+	"adventofcode/solutions/solution08"
 )
 
 func main(){
-	solution07.Run()
+	solution08.Run()
 }
