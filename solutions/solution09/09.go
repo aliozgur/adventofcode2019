@@ -20,7 +20,11 @@ func Run(){
 	fmt.Println(strings.Repeat("-",120))
 	fmt.Println("Day 09 Part 1 Output:",output)
 	_ = newProg
-	//fmt.Println("New Program:",newProg)
-	fmt.Println(strings.Repeat("-",120))
 
+	inputs[0] = 2
+	output, newProg, _, _ = vm.RunProgram(puzzle, inputs)
+	fmt.Println(strings.Repeat("-",120))
+	fmt.Println("Day 09 Part 2 Output:",output)
+	_ = newProg
 }
+
