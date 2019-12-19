@@ -22,6 +22,7 @@ func Max(v1 int, v2 int) int{
 	}
 	return v2
 }
+
 func ReadIntegersFromFile(filePath string) (result []int64){
 	file, err := os.Open(filePath)
 	if err != nil {
