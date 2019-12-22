@@ -6,6 +6,7 @@ import (
 	tm "github.com/buger/goterm"
 	"log"
 	"math"
+	"sort"
 	"strings"
 	"time"
 )
@@ -25,7 +26,23 @@ type AsteroidMap struct {
 type Asteroid struct {
 	X                 float64
 	Y                 float64
-	ObservedAsteroids map[string]*Asteroid
+	ObservedAsteroids map[string]Target
+}
+
+type Target struct{
+	Ast *Asteroid
+	Angle float64
+	Distance float64
+}
+
+type ByAngleClockwise []Target
+
+func (a ByAngleClockwise) Len() int           { return len(a) }
+func (a ByAngleClockwise) Less(i, j int) bool { return a[i].Angle > a[j].Angle }
+func (a ByAngleClockwise) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+
+func (target Target) String() string{
+	return fmt.Sprintf("Angle:%f Distance:%f %s ", target.Angle, target.Distance,target.Ast.String())
 }
 
 func (asteroid Asteroid) String() string {
@@ -47,7 +64,7 @@ func NewAsteroidMap(input string, options  *AsteroidMapOptions) (asteroidMap Ast
 		asteroids := strings.Split(line, "")
 		for _, v := range asteroids {
 			if v == "#" {
-				asteroid := Asteroid{X: x, Y: y, ObservedAsteroids: make(map[string]*Asteroid, 0)}
+				asteroid := Asteroid{X: x, Y: y, ObservedAsteroids: make(map[string]Target, 0)}
 				asteroidMap.Asteroids = append(asteroidMap.Asteroids, &asteroid)
 			}
 			x++
@@ -79,8 +96,9 @@ func (asteroidMap *AsteroidMap) Solve() (max int, maxAsteroid *Asteroid) {
 	for i := 0; i < numOfAsteroids; i++{
 		a := asteroidMap.Asteroids[i]
 		angles := make(map[float64]*Asteroid)
-		asteroidMap.printMap(nil)
 
+
+		asteroidMap.printMap(nil)
 		asteroidMap.drawPoint(*a,tm.RED)
 
 		for j := 0; j < numOfAsteroids; j++ {
@@ -88,14 +106,16 @@ func (asteroidMap *AsteroidMap) Solve() (max int, maxAsteroid *Asteroid) {
 			if a == p {
 				continue
 			}
-
-			angle := math.Mod(math.Atan2(-1*(p.Y-a.Y), p.X-a.X),2 * math.Pi)
+			// Change X and Y to get clockwise angles
+			// Angels decrease as we move clockwise
+			angle := math.Atan2(p.X-a.X,p.Y-a.Y)
 			ap, ok := angles[angle]
 
 			asteroidMap.drawPoint(*p,tm.BLUE)
 			if !ok{
+
 				angles[angle] = p
-				a.ObservedAsteroids[p.String()] = p
+				a.ObservedAsteroids[p.String()] = Target{Angle:angle,Distance:a.Distance(*p),Ast:p}
 				asteroidMap.drawPoint(*p,tm.GREEN)
 			} else{
 				d1 := a.Distance(*ap)
@@ -103,13 +123,12 @@ func (asteroidMap *AsteroidMap) Solve() (max int, maxAsteroid *Asteroid) {
 				if d1 < d2 {
 					angles[angle] = p
 					delete(a.ObservedAsteroids,ap.String())
-					a.ObservedAsteroids[p.String()] = p
+					a.ObservedAsteroids[p.String()] = Target{Angle:angle,Distance:a.Distance(*p),Ast:p}
 					asteroidMap.drawPoint(*ap,tm.WHITE)
 					asteroidMap.drawPoint(*p,tm.GREEN)
 				}
 			}
 		}
-
 		observedCnt := len(angles)
 		if observedCnt > max {
 			max = observedCnt
@@ -126,9 +145,19 @@ func (asteroidMap *AsteroidMap) Solve() (max int, maxAsteroid *Asteroid) {
 
 	asteroidMap.printMap(maxAsteroid)
 	fmt.Println("")
-	fmt.Println("Number of asteroids:",len(asteroidMap.Asteroids))
-	fmt.Println("Final Max",max)
-	fmt.Println("Final max point",maxAsteroid)
+	//fmt.Println("Number of asteroids:",len(asteroidMap.Asteroids))
+	fmt.Println("Part 1 | Answer: ",max)
+	//fmt.Println("Part 1 | Point",maxAsteroid)
+
+	targets := make([]Target,0)
+	for _,v := range maxAsteroid.ObservedAsteroids{
+		targets = append(targets,v)
+	}
+
+	sort.Sort(ByAngleClockwise(targets))
+	target := targets[199].Ast
+	fmt.Println("Part 2 | Answer: ", target.X*100 + target.Y)
+
 	return
 }
 
