@@ -3,46 +3,37 @@ package solution10
 import (
 	"bufio"
 	"fmt"
+	tm "github.com/buger/goterm"
 	"log"
 	"math"
 	"strings"
+	"time"
 )
 
-/*
-**** Our reference  point is (x1,y1) ****
-
-1) Pick a point (x2,y2) and find the slope (m) of the line between (x1,y1) and (x2,y2)
-m = (y2 - y1) / (x2 - x1)
-
-2) Solve the below equation (we already know m) for any of the (x1,y1) (x2,y2)
-y = mx + b
-
-3) Find all points other than (x1,y1) on the line
-
-4) Calculate the distance of (x1,y1) to found points
-
-5) Pick the point with minimum distance
-
-*/
+type AsteroidMapOptions struct {
+	Print bool
+	PrintSleepMiliseconds int
+}
 
 type AsteroidMap struct {
 	Asteroids []*Asteroid
 	MaxX      float64
 	MaxY      float64
+	Options   *AsteroidMapOptions
 }
 
 type Asteroid struct {
 	X                 float64
 	Y                 float64
-	Atan2             float64
-	ObservedAsteroids []*Asteroid
+	ObservedAsteroids map[string]*Asteroid
 }
 
 func (asteroid Asteroid) String() string {
 	return fmt.Sprintf("(%f,%f)", asteroid.X, asteroid.Y)
 }
-func NewAsteroidMap(input string) (asteroidMap AsteroidMap) {
-	asteroidMap = AsteroidMap{Asteroids: make([]*Asteroid, 0)}
+
+func NewAsteroidMap(input string, options  *AsteroidMapOptions) (asteroidMap AsteroidMap) {
+	asteroidMap = AsteroidMap{Asteroids: make([]*Asteroid, 0),Options:options}
 	var lines = strings.NewReader(input)
 	scanner := bufio.NewScanner(lines)
 	y := 0.0
@@ -52,16 +43,14 @@ func NewAsteroidMap(input string) (asteroidMap AsteroidMap) {
 		if line == "" {
 			continue
 		}
-		x = -1
+		x = 0
 		asteroids := strings.Split(line, "")
 		for _, v := range asteroids {
-			x++
-			if v != "#" {
-				continue
+			if v == "#" {
+				asteroid := Asteroid{X: x, Y: y, ObservedAsteroids: make(map[string]*Asteroid, 0)}
+				asteroidMap.Asteroids = append(asteroidMap.Asteroids, &asteroid)
 			}
-			asteroid := Asteroid{X: x, Y: y, Atan2:math.Atan2(y,x), ObservedAsteroids: make([]*Asteroid, 0)}
-			asteroidMap.Asteroids = append(asteroidMap.Asteroids, &asteroid)
-
+			x++
 		}
 		y++
 	}
@@ -83,92 +72,109 @@ func (asteroid Asteroid) Distance(from Asteroid) (result float64) {
 	return
 }
 
-func (asteroid Asteroid) LineFunc(from Asteroid) (result func(a Asteroid) bool) {
-	if asteroid.X == from.X {
-		result = func(a Asteroid) bool {
-			return asteroid.X == a.X
-		}
-		return
-	}
-
-	m := (from.Y - asteroid.Y) / (from.X - asteroid.X) // Slope
-	b := asteroid.Y - (m * asteroid.X)
-
-	result = func(a Asteroid) bool {
-		//log.Printf("(%f,%f), (%f,%f) Line function is y = %f*x + %f\n",asteroid.X,asteroid.Y, from.X,from.Y,m,b)
-		//log.Printf("Checking (%f,%f) Line function is y = %f*x + %f\n",a.X,a.Y,m,b)
-		result := m*a.X + b == a.Y
-		return result
-	}
-	return
-}
-
-func (asteroid Asteroid) IsOnLine(line func(x float64, y float64) bool) (result bool) {
-	result = line(asteroid.X, asteroid.Y)
-	return
-}
-func (asteroid Asteroid) DirectionTo(to Asteroid) (dir int){
-	if asteroid.X == to.X{
-		if asteroid.Y > to.Y{
-			dir = 1
-		} else{
-			dir = -1
-		}
-	} else if asteroid.Y == to.Y{
-		if asteroid.X > to.X{
-			dir = 1
-		} else{
-			dir = -1
-		}
-	} else{
-		if asteroid.X > to.X {
-			dir = 1
-		} else{
-			dir = -1
-		}
-	}
-	return dir
-}
 func (asteroidMap *AsteroidMap) Solve() (max int, maxAsteroid *Asteroid) {
 	numOfAsteroids := len(asteroidMap.Asteroids)
 	max = math.MinInt32
-	maxAsteroid = nil
 
-	for i := 0; i < numOfAsteroids; i++ {
+	for i := 0; i < numOfAsteroids; i++{
 		a := asteroidMap.Asteroids[i]
+		angles := make(map[float64]*Asteroid)
+		asteroidMap.printMap(nil)
+
+		asteroidMap.drawPoint(*a,tm.RED)
 
 		for j := 0; j < numOfAsteroids; j++ {
-			p1 := asteroidMap.Asteroids[j]
-			if p1 == a {
+			p := asteroidMap.Asteroids[j]
+			if a == p {
 				continue
 			}
-			dir := a.DirectionTo(*p1)
-			isOnLineFunc := a.LineFunc(*p1)
-			dMin := a.Distance(*p1)
-			hasObstacle := false
 
-			for k := 0; k < numOfAsteroids; k++ {
-				p2 := asteroidMap.Asteroids[k]
-				if p2 == a || p2 == p1 || !isOnLineFunc(*p2) || a.DirectionTo(*p2) != dir {
-					continue
-				}
-				d := a.Distance(*p2)
-				if d < dMin {
-					hasObstacle = true
-					break
-				}
-			}
+			angle := math.Mod(math.Atan2(-1*(p.Y-a.Y), p.X-a.X),2 * math.Pi)
+			ap, ok := angles[angle]
 
-			if !hasObstacle {
-				a.ObservedAsteroids = append(a.ObservedAsteroids,p1)
+			asteroidMap.drawPoint(*p,tm.BLUE)
+			if !ok{
+				angles[angle] = p
+				a.ObservedAsteroids[p.String()] = p
+				asteroidMap.drawPoint(*p,tm.GREEN)
+			} else{
+				d1 := a.Distance(*ap)
+				d2 := a.Distance(*p)
+				if d1 < d2 {
+					angles[angle] = p
+					delete(a.ObservedAsteroids,ap.String())
+					a.ObservedAsteroids[p.String()] = p
+					asteroidMap.drawPoint(*ap,tm.WHITE)
+					asteroidMap.drawPoint(*p,tm.GREEN)
+				}
 			}
 		}
-		observedCnt := len(a.ObservedAsteroids)
+
+		observedCnt := len(angles)
 		if observedCnt > max {
 			max = observedCnt
 			maxAsteroid = a
 		}
+
+		if asteroidMap.Options != nil && asteroidMap.Options.Print {
+			fmt.Println("")
+			fmt.Println("Current Max", max)
+			fmt.Println("Current max point", maxAsteroid)
+			time.Sleep(100*time.Millisecond)
+		}
 	}
 
+	asteroidMap.printMap(maxAsteroid)
+	fmt.Println("")
+	fmt.Println("Number of asteroids:",len(asteroidMap.Asteroids))
+	fmt.Println("Final Max",max)
+	fmt.Println("Final max point",maxAsteroid)
 	return
+}
+
+
+func  (asteroidMap *AsteroidMap) drawPoint(p Asteroid, color int){
+	if asteroidMap.Options == nil || !asteroidMap.Options.Print{
+		return
+	}
+
+	tm.MoveCursor(int(p.X+1),int(p.Y+1))
+	tm.Flush()
+	tm.Print(tm.Color("●", color))
+	tm.Flush()
+	time.Sleep(time.Duration(asteroidMap.Options.PrintSleepMiliseconds)*time.Millisecond)
+}
+
+func (asteroidMap *AsteroidMap) printMap( a *Asteroid){
+	if !asteroidMap.Options.Print{
+		return
+	}
+	tm.Clear()
+	tm.MoveCursor(1,1)
+	tm.Flush()
+
+	for x := 1; x <= int(asteroidMap.MaxX); x++{
+		for y := 1; y <= int(asteroidMap.MaxY); y++{
+			tm.MoveCursor(x,y)
+			tm.Print(tm.Color(".",tm.WHITE))
+			tm.Flush()
+		}
+	}
+	tm.MoveCursor(1,1)
+	tm.Flush()
+	for _,p := range asteroidMap.Asteroids{
+		tm.MoveCursor(int(p.X+1),int(p.Y+1))
+		if a != nil {
+			if p == a {
+				tm.Print(tm.Color("●", tm.RED))
+			} else if _, ok := a.ObservedAsteroids[p.String()];ok {
+				tm.Print(tm.Color("●", tm.GREEN))
+			} else {
+				tm.Print(tm.Color("●", tm.WHITE))
+			}
+		} else {
+			tm.Print("●")
+		}
+		tm.Flush()
+	}
 }
