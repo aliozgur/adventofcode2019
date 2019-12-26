@@ -37,7 +37,7 @@ func calculateFuelSum(masses []int64) int64{
 }
 
 func Run(){
-	fmt.Println("Run on:",time.Now())
+	fmt.Println("Continue on:",time.Now())
 	var masses = input01.ReadInput()
 	var part01 = calculateFuelSum(masses)
 	var part02 = calculateFuelSumRecursive(masses)

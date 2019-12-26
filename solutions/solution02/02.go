@@ -7,7 +7,7 @@ import (
 )
 var opcodes []int
 func init(){
-	fmt.Println("Run on:",time.Now())
+	fmt.Println("Continue on:",time.Now())
 }
 func Run(){
 

@@ -2,6 +2,7 @@ package solution10
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	tm "github.com/buger/goterm"
 	"log"
@@ -49,7 +50,16 @@ func (asteroid Asteroid) String() string {
 	return fmt.Sprintf("(%f,%f)", asteroid.X, asteroid.Y)
 }
 
-func NewAsteroidMap(input string, options  *AsteroidMapOptions) (asteroidMap AsteroidMap) {
+func NewAsteroidMap(input string, userOptions  *AsteroidMapOptions) (asteroidMap AsteroidMap) {
+	var options = userOptions
+	if userOptions == nil {
+		boolPtr := flag.Bool("p", false, "Print on screen")
+		numbPtr := flag.Int("ps", 0, "Slow down print progress")
+		flag.Parse()
+
+		options = &AsteroidMapOptions{Print: *boolPtr, PrintSleepMiliseconds: *numbPtr}
+	}
+
 	asteroidMap = AsteroidMap{Asteroids: make([]*Asteroid, 0),Options:options}
 	var lines = strings.NewReader(input)
 	scanner := bufio.NewScanner(lines)

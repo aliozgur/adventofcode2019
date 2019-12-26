@@ -41,144 +41,154 @@ type IntcodeVm struct {
 	StopOnFirstOutput   bool
 	WaitForInput        bool
 	StopIfNextOpIsHalt  bool
+	PrimaryMemory  		[]int
+	ExtendedMemory      map[int]int
+	Output              []int
+	Halted 				bool
 }
 
-func Run(program string, inputs []int, cursor int) (output int, newProg string, pausedOn int, halted bool) {
+func Run(program string, inputs []int, cursor int) (output int, pausedOn int, halted bool) {
 	vm := IntcodeVm{Cursor:cursor,RelativeBase: 0, AuxiliaryMemorySize:0,StopOnFirstOutput: true, WaitForInput: true, StopIfNextOpIsHalt: false}
-	output, newProg, pausedOn, halted = vm.RunProgram(program, inputs)
+	vm.LoadProgram(program)
+	vm.Continue(inputs)
+	output, pausedOn, halted = vm.Output[0],vm.Cursor,vm.Halted
 	return
 }
 
-func (vm *IntcodeVm) RunProgram(program string, inputs []int) (output int, newProg string, pausedOn int, halted bool) {
-	cursor := vm.Cursor
-	primaryMemory := parseInput(program)
-	extendedMemory := make(map[int]int)
+func (vm *IntcodeVm) LoadProgram(program string){
+	vm.PrimaryMemory = vm.parseInput(program)
+	vm.ExtendedMemory = make(map[int]int)
+}
 
-	output = -1
+func (vm *IntcodeVm) RunProgram(program string, inputs []int){
+	vm.LoadProgram(program)
+	vm.Continue(inputs)
+	return
+}
+
+func (vm *IntcodeVm) Continue(inputs []int){
+	vm.Output = make([]int,0)
 	done := false
 	jump := 0
-	relBase := vm.RelativeBase
-
-	readmemory := func(index int) (result int) {
-		memoryLen := len(primaryMemory)
-		if index < memoryLen {
-			result = primaryMemory[index]
-			return
-		}
-
-		offset := index - memoryLen
-
-		result,_ = extendedMemory[offset]
-		return
-	}
-
-	storetomemory := func(index, value int) {
-		idx := index
-		memoryLen := len(primaryMemory)
-		if idx < memoryLen {
-			primaryMemory[idx] = value
-			return
-		}
-
-		offset := idx - memoryLen
-		extendedMemory[offset] = value
-		return
-	}
-
-	evalParam := func(pos, pmode int) (v int) {
-		tmp := readmemory(pos)
-		if pmode == PMODEPOS {
-			v = readmemory(tmp)
-		} else if pmode == PMODEVAL {
-			v = tmp
-		} else if pmode == PMODEREL {
-			v = readmemory(relBase + tmp)
-		}
-		return
-	}
-
-	evalStoreAddres := func(pos, pmode int) (v int) {
-		tmp := readmemory(pos)
-		if pmode == PMODEPOS {
-			v = tmp
-		} else if pmode == PMODEREL {
-			v = relBase + tmp
-		} else {
-			panic(fmt.Sprintf("Parameter mode %d not supported.", pmode))
-		}
-		return
-	}
 
 	for !done {
 		jump = 0
-		opcode := evalOpcode(readmemory(cursor))
+		opcode := evalOpcode(vm.readmemory(vm.Cursor))
 		if opcode.Code == HALT {
-			halted = true
+			vm.Halted = true
 			break
 		}
 
 		switch opcode.Code {
 		case ADD, MULTIPLY:
-			v1 := evalParam(cursor+1, opcode.ParamMode1)
-			v2 := evalParam(cursor+2, opcode.ParamMode2)
-			v3 := evalStoreAddres(cursor+3, opcode.ParamMode3)
+			v1 := vm.evalParam(vm.Cursor+1, opcode.ParamMode1)
+			v2 := vm.evalParam(vm.Cursor+2, opcode.ParamMode2)
+			v3 := vm.evalStoreAddres(vm.Cursor+3, opcode.ParamMode3)
 			result := addOrMultiply(opcode, v1, v2)
-			storetomemory(v3, result)
+			vm.storetomemory(v3, result)
 			jump = opcode.Length
 		case JUMPTRUE, JUMPFALSE:
-			v1 := evalParam(cursor+1, opcode.ParamMode1)
-			v2 := evalParam(cursor+2, opcode.ParamMode2)
+			v1 := vm.evalParam(vm.Cursor+1, opcode.ParamMode1)
+			v2 := vm.evalParam(vm.Cursor+2, opcode.ParamMode2)
 
 			shouldJump := shouldJump(opcode, v1)
 			if shouldJump {
 				jump = v2
-				cursor = jump
+				vm.Cursor = jump
 				jump = 0
 			} else {
 				jump = opcode.Length
 			}
 
 		case LESSTHAN, EQUALS:
-			v1 := evalParam(cursor+1, opcode.ParamMode1)
-			v2 := evalParam(cursor+2, opcode.ParamMode2)
-			v3 := evalStoreAddres(cursor+3, opcode.ParamMode3)
+			v1 := vm.evalParam(vm.Cursor+1, opcode.ParamMode1)
+			v2 := vm.evalParam(vm.Cursor+2, opcode.ParamMode2)
+			v3 := vm.evalStoreAddres(vm.Cursor+3, opcode.ParamMode3)
 			result := compare(opcode, v1, v2)
-			storetomemory(v3, result)
+			vm.storetomemory(v3, result)
 			jump = opcode.Length
 		case INPUT:
 			if vm.WaitForInput && len(inputs) == 0 {
 				done = true
 			} else {
-				v1 := evalStoreAddres(cursor+1, opcode.ParamMode1)
+				v1 := vm.evalStoreAddres(vm.Cursor+1, opcode.ParamMode1)
 				result := inputs[0]
-				storetomemory(v1, result)
+				vm.storetomemory(v1, result)
 				jump = opcode.Length
 				inputs = inputs[1:len(inputs)]
 			}
 		case OUTPUT:
-			output = evalParam(cursor+1, opcode.ParamMode1)
+			output := vm.evalParam(vm.Cursor+1, opcode.ParamMode1)
+			vm.Output = append(vm.Output,output)
 			if vm.StopOnFirstOutput {
 				done = true
 			}
-			if vm.StopIfNextOpIsHalt && readmemory(cursor+2) == HALT {
+			if vm.StopIfNextOpIsHalt && vm.readmemory(vm.Cursor+2) == HALT {
 				done = true
 			}
 			jump = opcode.Length
 		case RELBASE:
-			v1 := evalParam(cursor+1, opcode.ParamMode1)
-			relBase += v1
+			v1 := vm.evalParam(vm.Cursor+1, opcode.ParamMode1)
+			vm.RelativeBase += v1
 			jump = opcode.Length
 		}
 
-		cursor = cursor + jump
+		vm.Cursor = vm.Cursor + jump
 	}
-
-	pausedOn = cursor
-	newProg = rebuildProgram(primaryMemory)
 	return
 }
 
-func parseInput(problem string) (result []int) {
+func (vm *IntcodeVm) evalParam (pos, pmode int) (v int) {
+	tmp := vm.readmemory(pos)
+	if pmode == PMODEPOS {
+		v = vm.readmemory(tmp)
+	} else if pmode == PMODEVAL {
+		v = tmp
+	} else if pmode == PMODEREL {
+		v = vm.readmemory(vm.RelativeBase + tmp)
+	}
+	return
+}
+
+func (vm *IntcodeVm)  evalStoreAddres (pos, pmode int) (v int) {
+	tmp := vm.readmemory(pos)
+	if pmode == PMODEPOS {
+		v = tmp
+	} else if pmode == PMODEREL {
+		v = vm.RelativeBase + tmp
+	} else {
+		panic(fmt.Sprintf("Parameter mode %d not supported.", pmode))
+	}
+	return
+}
+
+func (vm *IntcodeVm) readmemory(index int) (result int) {
+	memoryLen := len(vm.PrimaryMemory)
+	if index < memoryLen {
+		result = vm.PrimaryMemory[index]
+		return
+	}
+
+	offset := index - memoryLen
+
+	result,_ = vm.ExtendedMemory[offset]
+	return
+}
+
+func (vm *IntcodeVm) storetomemory(index, value int) {
+	idx := index
+	memoryLen := len(vm.PrimaryMemory)
+	if idx < memoryLen {
+		vm.PrimaryMemory[idx] = value
+		return
+	}
+
+	offset := idx - memoryLen
+	vm.ExtendedMemory[offset] = value
+	return
+}
+
+func (vm *IntcodeVm) parseInput(problem string) (result []int) {
 	var values = strings.Split(problem, ",")
 	for _, value := range values {
 		if value == "" {
@@ -260,23 +270,6 @@ func evalOpcode(intOpcode int) (result Opcode) {
 func extractDigit(value int, digit int) int {
 	pow10 := int(math.Pow10(digit - 1))
 	return (value / (pow10)) % 10
-}
-
-/*
-This function rebuilds the program string from the primary memory values
-Please note: This function discards the bits stored in the extended memory map
- */
-func rebuildProgram(opcodes []int) (program string) {
-	program = ""
-	for i, code := range opcodes {
-		if i == len(opcodes)-1 {
-			program += strconv.Itoa(code)
-		} else {
-			program += strconv.Itoa(code) + ","
-		}
-	}
-
-	return
 }
 
 func addOrMultiply(op Opcode, v1, v2 int) (result int) {
