@@ -9,6 +9,14 @@ import (
 )
 
 var DEBUG bool = false
+
+
+type UserOptions struct {
+	Print bool
+	PrintSleepMiliseconds int
+}
+
+
 func Println(a ...interface{}) (n int, err error) {
 	if !DEBUG{
 		return

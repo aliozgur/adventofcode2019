@@ -15,7 +15,7 @@ const puzzle = "1102,34463338,34463338,63,1007,63,34463338,63,1005,63,53,1102,1,
 
 func Run(){
 	inputs := []int{1}
-	vm1 := intcodevm.IntcodeVm{Cursor:0, RelativeBase:0, AuxiliaryMemorySize:5000,StopOnFirstOutput: true, WaitForInput: false, StopIfNextOpIsHalt: false}
+	vm1 := intcodevm.IntcodeVm{Cursor:0, RelativeBase:0, AuxiliaryMemorySize:5000,OutputMode: intcodevm.OUTPUT_STOPONFIRST, WaitForInput: false}
 	vm1.RunProgram(puzzle, inputs)
 	fmt.Println(strings.Repeat("-",120))
 	fmt.Println("Day 09 Part 1 Output:",vm1.Output)
@@ -23,7 +23,7 @@ func Run(){
 
 
 	inputs[0] = 2
-	vm2 := intcodevm.IntcodeVm{Cursor:0, RelativeBase:0, AuxiliaryMemorySize:5000,StopOnFirstOutput: true, WaitForInput: false, StopIfNextOpIsHalt: false}
+	vm2 := intcodevm.IntcodeVm{Cursor:0, RelativeBase:0, AuxiliaryMemorySize:5000,OutputMode: intcodevm.OUTPUT_STOPONFIRST, WaitForInput: false}
 	vm2.RunProgram(puzzle, inputs)
 	fmt.Println(strings.Repeat("-",120))
 	fmt.Println("Day 09 Part 2 Output:",vm2.Output)

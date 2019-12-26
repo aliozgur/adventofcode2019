@@ -16,4 +16,6 @@ Visit [adventofcode.com](https://adventofcode.com/2019) to view the calendar of 
 * [Day 8](solutions/solution08/08.go)
 * [Day 9](solutions/solution09/09.go)
 * [Day 10](solutions/solution10/10.go)
+* [Day 11](solutions/solution11/11.go)
+
 
