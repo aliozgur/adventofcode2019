@@ -134,7 +134,7 @@ func Solve(program string, startColor Color, startHeading Heading, userOptions *
 	robot = &Robot{CurrentPoint: &startPoint, Heading: startHeading, UserOptions:userOptions}
 	robot.addPoint(&startPoint)
 
-	robot.Brain = intvm.IntcodeVm{OutputMode: intvm.OUTPUT_STOPONSECOND, AuxiliaryMemorySize: 5000}
+	robot.Brain = intvm.IntcodeVm{OutputMode: intvm.OUTPUT_STOPONSECOND}
 	robot.Brain.LoadProgram(program)
 	robot.execute()
 	return

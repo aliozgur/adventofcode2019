@@ -42,7 +42,6 @@ type OutputMode int
 type IntcodeVm struct {
 	Cursor              int
 	RelativeBase        int
-	AuxiliaryMemorySize int
 	OutputMode          OutputMode
 	WaitForInput        bool
 	PrimaryMemory       []int
@@ -52,12 +51,13 @@ type IntcodeVm struct {
 }
 
 func Run(program string, inputs []int, cursor int) (output int, pausedOn int, halted bool) {
-	vm := IntcodeVm{Cursor: cursor, RelativeBase: 0, AuxiliaryMemorySize: 0, OutputMode: OUTPUT_STOPONFIRST, WaitForInput: true}
+	vm := IntcodeVm{Cursor: cursor, RelativeBase: 0, OutputMode: OUTPUT_STOPONFIRST, WaitForInput: true}
 	vm.LoadProgram(program)
 	vm.Continue(inputs)
 	output, pausedOn, halted = vm.Output[0], vm.Cursor, vm.Halted
 	return
 }
+
 
 func (vm *IntcodeVm) LoadProgram(program string) {
 	vm.PrimaryMemory = vm.parseInput(program)
