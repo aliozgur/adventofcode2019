@@ -1,8 +1,10 @@
 package main
 
-import "adventofcode/solutions/solution07"
+import (
+	"adventofcode/solutions/solution11"
+)
 
 func main() {
 
-	solution07.Run()
+	solution11.SolveParts()
 }

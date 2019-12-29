@@ -102,13 +102,6 @@ func (asteroid Asteroid) Distance(from Asteroid) (result float64) {
 	return
 }
 
-func SolveParts(){
-	options := utils.UserOptions{Print:false}
-	sol11.Solve(in11.Puzzle,sol11.BLACKPANEL,sol11.HEADINGUP,&options)
-
-	options = utils.UserOptions{Print:true,PrintSleepMiliseconds:5}
-	sol11.Solve(in11.Puzzle,sol11.WHITEPANEL,sol11.HEADINGUP,&options)
-}
 func (asteroidMap *AsteroidMap) Solve() (max int, maxAsteroid *Asteroid) {
 	numOfAsteroids := len(asteroidMap.Asteroids)
 	max = math.MinInt32

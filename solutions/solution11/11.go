@@ -129,6 +129,15 @@ type Robot struct {
 	minY          int
 }
 
+
+func SolveParts(){
+	options := utils.UserOptions{Print:false}
+	Solve(in11.Puzzle,BLACKPANEL,HEADINGUP,&options)
+
+	options = utils.UserOptions{Print:true,PrintSleepMiliseconds:5}
+	Solve(in11.Puzzle,WHITEPANEL,HEADINGUP,&options)
+}
+
 func Solve(program string, startColor Color, startHeading Heading, userOptions *utils.UserOptions) (robot *Robot) {
 	startPoint := Point{X: 0, Y: 0, Color: startColor}
 	robot = &Robot{CurrentPoint: &startPoint, Heading: startHeading, UserOptions:userOptions}
