@@ -1,10 +1,7 @@
 package main
 
-import (
-	"adventofcode/solutions/solution11"
-)
+import "adventofcode/solutions/solution12"
 
-func main() {
-
-	solution11.SolveParts()
+func main(){
+	solution12.Part1()
 }
