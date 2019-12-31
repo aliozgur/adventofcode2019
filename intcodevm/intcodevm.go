@@ -24,10 +24,11 @@ const (
 	PMODEVAL = 1
 	PMODEREL = 2
 
-	OUTPUT_STOPNONE         = OutputMode(0)
-	OUTPUT_STOPONFIRST      = OutputMode(1)
-	OUTPUT_STOPONSECOND     = OutputMode(2)
-	OUTPUT_STOPIFNEXTISHALT = OutputMode(3)
+	OUTPUT_STOPNONE         = 0
+	OUTPUT_STOPONFIRST      = 1
+	OUTPUT_STOPONSECOND     = 2
+	OUTPUT_STOPONTHIRD      = 3
+	OUTPUT_STOPIFNEXTISHALT = 100
 )
 
 type Opcode struct {
@@ -40,14 +41,14 @@ type Opcode struct {
 }
 type OutputMode int
 type IntcodeVm struct {
-	Cursor              int
-	RelativeBase        int
-	OutputMode          OutputMode
-	WaitForInput        bool
-	PrimaryMemory       []int
-	ExtendedMemory      map[int]int
-	Output              []int
-	Halted              bool
+	Cursor         int
+	RelativeBase   int
+	OutputMode     OutputMode
+	WaitForInput   bool
+	PrimaryMemory  []int
+	ExtendedMemory map[int]int
+	Output         []int
+	Halted         bool
 }
 
 func Run(program string, inputs []int, cursor int) (output int, pausedOn int, halted bool) {
@@ -57,7 +58,6 @@ func Run(program string, inputs []int, cursor int) (output int, pausedOn int, ha
 	output, pausedOn, halted = vm.Output[0], vm.Cursor, vm.Halted
 	return
 }
-
 
 func (vm *IntcodeVm) LoadProgram(program string) {
 	vm.PrimaryMemory = vm.parseInput(program)
@@ -127,6 +127,8 @@ func (vm *IntcodeVm) Continue(inputs []int) {
 			if vm.OutputMode == OUTPUT_STOPONFIRST && len(vm.Output) == 1 {
 				done = true
 			} else if vm.OutputMode == OUTPUT_STOPONSECOND && len(vm.Output) == 2 {
+				done = true
+			} else if vm.OutputMode == OUTPUT_STOPONTHIRD && len(vm.Output) == 3 {
 				done = true
 			} else if vm.OutputMode == OUTPUT_STOPIFNEXTISHALT && vm.readmemory(vm.Cursor+2) == HALT {
 				done = true
