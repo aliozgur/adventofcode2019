@@ -2,6 +2,7 @@ package solution13
 
 import (
 	"adventofcode/intcodevm"
+	"flag"
 	tm "github.com/buger/goterm"
 	"time"
 )
@@ -45,7 +46,16 @@ func evalState(output []int) (result state) {
 	return
 }
 
-func Part1() {
+func Solve() {
+	partPtr := flag.Int("p", 0, "Part number")
+	flag.Parse()
+	if *partPtr == 0 || *partPtr == 1 {
+		part1()
+	} else if *partPtr == 2 {
+		part2()
+	}
+}
+func part1() {
 	vm := intcodevm.IntcodeVm{OutputMode: intcodevm.OUTPUT_STOPNONE}
 	vm.RunProgram(puzzle, nil)
 
@@ -62,7 +72,7 @@ func Part1() {
 	tm.Flush()
 }
 
-func Part2() {
+func part2() {
 
 	vm := intcodevm.IntcodeVm{OutputMode: intcodevm.OUTPUT_STOPNONE, WaitForInput: true}
 	vm.LoadProgram(puzzle)
